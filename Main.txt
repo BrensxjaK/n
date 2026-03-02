@@ -20,7 +20,7 @@ local redzlib = {
             ["Color Stroke"] = Color3.fromRGB(0, 255, 0),                       -- Verde neon
             ["Color Theme"] = Color3.fromRGB(0, 200, 0),                        -- Verde principal
             ["Color Text"] = Color3.fromRGB(144, 238, 144),                     -- Verde claro
-            ["Color Dark Text"] = Color3.fromRGB(144, 238, 144),                    -- Verde escuro
+            ["Color Dark Text"] = Color3.fromRGB(0, 100, 0),                    -- Verde escuro
             ["Color Element"] = Color3.fromRGB(0, 40, 0),                       -- Verde profundo
             ["Color Element Stroke"] = Color3.fromRGB(0, 255, 0)                -- Verde neon
         }
@@ -30,8 +30,8 @@ local redzlib = {
         Version = "1.2.0"
     },
     Save = {
-        UISize = {440, 300}, 
-TabSize = 130
+        UISize = {580, 390},
+        TabSize = 165,
         Theme = "Cyberpunk" 
     },
     Settings = {},
@@ -1423,7 +1423,7 @@ function redzlib:MakeWindow(Configs)
         Size = UDim2.new(1, 0, 1, 0),
         Position = UDim2.new(0, 0, 0, 0),
         BackgroundTransparency = 1,
-        Image = "rbxassetid://0", 
+        Image = "rbxassetid://101614251079837", 
         ImageColor3 = Color3.fromRGB(0, 255, 0),
         ImageTransparency = 0.85,
         ScaleType = Enum.ScaleType.Crop,
@@ -1519,8 +1519,8 @@ function redzlib:MakeWindow(Configs)
     local ParticleConfig = {
         MaxParticles = 15,
         SpawnRate = 0.3,
-        ParticleSize = {Min = 0, Max = 0},
-        ParticleSpeed = {Min = 0, Max = 0},
+        ParticleSize = {Min = 2, Max = 5},
+        ParticleSpeed = {Min = 1, Max = 3},
         ParticleLifetime = 5.7
     }
 
