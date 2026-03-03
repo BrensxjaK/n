@@ -30,8 +30,8 @@ local redzlib = {
         Version = "1.2.0"
     },
     Save = {
-        UISize = {440, 300},
-        TabSize = 130,
+        UISize = {550, 400},  -- Aumentado para melhor visualização
+        TabSize = 150,          -- Aumentado para melhor visualização
         Theme = "Cyberpunk" 
     },
     Settings = {},
@@ -1480,7 +1480,7 @@ function redzlib:MakeWindow(Configs)
         ScrollBarImageColor3 = Theme["Color Theme"],
         Position = UDim2.new(0, 0, 1, 0),
         AnchorPoint = Vector2.new(0, 1),
-        ScrollBarThickness = 1.5,
+        ScrollBarThickness = 3,  -- Aumentado para melhor visualização
         BackgroundTransparency = 1,
         ScrollBarImageTransparency = 0.2,
         CanvasSize = UDim2.new(),
@@ -1681,6 +1681,7 @@ function redzlib:MakeWindow(Configs)
         Name = "Buttons"
     })
     
+    -- Botões existentes
     local CloseButton = Create("ImageButton", {
         Size = UDim2.new(0, 14, 0, 14),
         Position = UDim2.new(1, -10, 0.5),
@@ -1698,9 +1699,46 @@ function redzlib:MakeWindow(Configs)
         Name = "Minimize"
     })
 
+    -- NOVO BOTÃO CUSTOMIZADO PARA CONTROLE DE TAMANHO
+    local SizeControlButton = Create("ImageButton", {
+        Size = UDim2.new(0, 20, 0, 20),
+        Position = UDim2.new(1, -60, 0.5),
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://10734941912", -- Ícone de escala
+        ImageColor3 = Theme["Color Text"],
+        AutoButtonColor = false,
+        Name = "SizeControl"
+    })
+
+    -- Adicionar tooltip para o botão de tamanho
+    local SizeTooltip = Create("Frame", ScreenGui, {
+        Size = UDim2.fromOffset(120, 30),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        BackgroundColor3 = Theme["Color Element"],
+        BackgroundTransparency = 0.2,
+        Visible = false,
+        ZIndex = 10
+    })
+    Make("Stroke", SizeTooltip, {Color = Theme["Color Stroke"]})
+    Make("Corner", SizeTooltip, UDim.new(0, 6))
+    
+    local TooltipText = InsertTheme(Create("TextLabel", SizeTooltip, {
+        Size = UDim2.new(1, -10, 1, -10),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Text = "<font face='Gotham'><i>Clique para tamanhos</i></font>",
+        TextColor3 = Theme["Color Text"],
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        RichText = true
+    }), "Text")
+
     SetChildren(ButtonsFolder, {
         CloseButton,
-        MinimizeButton
+        MinimizeButton,
+        SizeControlButton
     })
     
     local Minimized, SaveSize, WaitClick
@@ -1724,6 +1762,7 @@ function redzlib:MakeWindow(Configs)
         end
     end)
     
+    -- Funções dos botões
     function Window:CloseBtn()
         local Dialog = Window:Dialog({
             Title = "Lyra Hub",  
@@ -1736,6 +1775,7 @@ function redzlib:MakeWindow(Configs)
             }
         })
     end
+    
     function Window:MinimizeBtn()  
         if WaitClick then return end
         WaitClick = true
@@ -1757,9 +1797,92 @@ function redzlib:MakeWindow(Configs)
         
         WaitClick = false
     end
+
+    -- NOVA FUNÇÃO PARA CONTROLE DE TAMANHO
+    local SizeStates = {"Pequeno", "Médio", "Grande", "Padrão"}
+    local CurrentSizeState = 3 -- Começa com Grande (índice 3)
+    
+    function Window:CycleWindowSize()
+        CurrentSizeState = CurrentSizeState + 1
+        if CurrentSizeState > #SizeStates then
+            CurrentSizeState = 1
+        end
+        
+        local newSize
+        if CurrentSizeState == 1 then -- Pequeno
+            newSize = UDim2.fromOffset(450, 300)
+            MainScroll.Size = UDim2.new(0, 130, 1, -28)
+            SizeControlButton.ImageColor3 = Color3.fromRGB(255, 100, 100) -- Vermelho
+        elseif CurrentSizeState == 2 then -- Médio
+            newSize = UDim2.fromOffset(550, 380)
+            MainScroll.Size = UDim2.new(0, 140, 1, -28)
+            SizeControlButton.ImageColor3 = Color3.fromRGB(255, 200, 100) -- Amarelo
+        elseif CurrentSizeState == 3 then -- Grande
+            newSize = UDim2.fromOffset(630, 440)
+            MainScroll.Size = UDim2.new(0, 150, 1, -28)
+            SizeControlButton.ImageColor3 = Theme["Color Text"] -- Verde claro
+        else -- Padrão (restaurar do save)
+            newSize = UDim2.fromOffset(unpack(redzlib.Save.UISize))
+            MainScroll.Size = UDim2.new(0, redzlib.Save.TabSize, 1, -28)
+            SizeControlButton.ImageColor3 = Theme["Color Text"]
+        end
+        
+        -- Ajustar containers
+        Containers.Size = UDim2.new(1, -MainScroll.Size.X.Offset, 1, -28)
+        
+        -- Animar mudança de tamanho
+        CreateTween({MainFrame, "Size", newSize, 0.3, true})
+        
+        -- Salvar configurações
+        redzlib.Save.UISize = {newSize.X.Offset, newSize.Y.Offset}
+        redzlib.Save.TabSize = MainScroll.Size.X.Offset
+        SaveJson("Nexus library V5.json", redzlib.Save)
+        
+        -- Mostrar tooltip temporário
+        ShowSizeTooltip(SizeStates[CurrentSizeState])
+    end
+
+    -- Função para mostrar tooltip de tamanho
+    function ShowSizeTooltip(state)
+        TooltipText.Text = "<font face='Gotham'><i>Tamanho: " .. state .. "</i></font>"
+        SizeTooltip.Position = UDim2.fromOffset(
+            SizeControlButton.AbsolutePosition.X + SizeControlButton.AbsoluteSize.X/2 - 60,
+            SizeControlButton.AbsolutePosition.Y - 35
+        )
+        SizeTooltip.Visible = true
+        CreateTween({SizeTooltip, "BackgroundTransparency", 0.2, 0.1})
+        
+        task.wait(2)
+        CreateTween({SizeTooltip, "BackgroundTransparency", 1, 0.3, true})
+        SizeTooltip.Visible = false
+    end
+
+    -- Hover effects para o botão de tamanho
+    SizeControlButton.MouseEnter:Connect(function()
+        CreateTween({SizeControlButton, "ImageColor3", Theme["Color Theme"], 0.2})
+        SizeTooltip.Position = UDim2.fromOffset(
+            SizeControlButton.AbsolutePosition.X + SizeControlButton.AbsoluteSize.X/2 - 60,
+            SizeControlButton.AbsolutePosition.Y - 35
+        )
+        SizeTooltip.Visible = true
+        CreateTween({SizeTooltip, "BackgroundTransparency", 0.2, 0.1})
+    end)
+
+    SizeControlButton.MouseLeave:Connect(function()
+        CreateTween({SizeControlButton, "ImageColor3", Theme["Color Text"], 0.2})
+        CreateTween({SizeTooltip, "BackgroundTransparency", 1, 0.3, true})
+        task.wait(0.3)
+        SizeTooltip.Visible = false
+    end)
+
+    SizeControlButton.Activated:Connect(function()
+        Window:CycleWindowSize()
+    end)
+
     function Window:Minimize()
         MainFrame.Visible = not MainFrame.Visible
     end
+    
     function Window:AddMinimizeButton(Configs)
         local Button = MakeDrag(Create("ImageButton", ScreenGui, {
             Size = UDim2.fromOffset(35, 35),
@@ -1788,6 +1911,7 @@ function redzlib:MakeWindow(Configs)
             Button = Button
         }
     end
+    
     function Window:Set(Val1, Val2)
         if type(Val1) == "string" and type(Val2) == "string" then
             Title.Text = "<font face='Gotham'><b><i>" .. Val1 .. "</i></b></font>"
@@ -1796,6 +1920,7 @@ function redzlib:MakeWindow(Configs)
             Title.Text = "<font face='Gotham'><b><i>" .. Val1 .. "</i></b></font>"
         end
     end
+    
     function Window:Dialog(Configs)
         if MainFrame:FindFirstChild("Dialog") then return end
         if Minimized then
@@ -1903,6 +2028,7 @@ function redzlib:MakeWindow(Configs)
         end)
         return Dialog
     end
+    
     function Window:SelectTab(TabSelect)
         if type(TabSelect) == "number" then
             redzlib.Tabs[TabSelect].func:Enable()
@@ -1966,7 +2092,7 @@ function redzlib:MakeWindow(Configs)
             Size = UDim2.new(1, 0, 1, 0),
             Position = UDim2.new(0, 0, 1),
             AnchorPoint = Vector2.new(0, 1),
-            ScrollBarThickness = 1.5,
+            ScrollBarThickness = 3,  -- Aumentado para melhor visualização
             BackgroundTransparency = 1,
             ScrollBarImageTransparency = 0.2,
             ScrollBarImageColor3 = Theme["Color Theme"],
@@ -2071,6 +2197,7 @@ function redzlib:MakeWindow(Configs)
             end
             return Section
         end
+        
         function Tab:AddParagraph(Configs)
             local PName = Configs[1] or Configs.Title or "Paragraph"
             local PDesc = Configs[2] or Configs.Text or ""
@@ -2096,6 +2223,7 @@ function redzlib:MakeWindow(Configs)
             end
             return Paragraph
         end
+        
         function Tab:AddButton(Configs)
             local BName = Configs[1] or Configs.Name or Configs.Title or "Button!"
             local BDescription = Configs.Desc or Configs.Description or ""
@@ -2132,6 +2260,7 @@ function redzlib:MakeWindow(Configs)
             end
             return Button
         end
+        
         function Tab:AddToggle(Configs)
             local TName = Configs[1] or Configs.Name or Configs.Title or "Toggle"
             local TDesc = Configs.Desc or Configs.Description or ""
@@ -2209,6 +2338,7 @@ function redzlib:MakeWindow(Configs)
             end
             return Toggle
         end
+        
         function Tab:AddDropdown(Configs)
             local DName = Configs[1] or Configs.Name or Configs.Title or "Dropdown"
             local DDesc = Configs.Desc or Configs.Description or ""
@@ -2270,7 +2400,7 @@ function redzlib:MakeWindow(Configs)
             local ScrollFrame = InsertTheme(Create("ScrollingFrame", DropFrame, {
                 ScrollBarImageColor3 = Theme["Color Theme"],
                 Size = UDim2.new(1, 0, 1, 0),
-                ScrollBarThickness = 1.5,
+                ScrollBarThickness = 3,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2.new(),
@@ -2713,6 +2843,7 @@ function redzlib:MakeWindow(Configs)
             function Slider:Destroy() Button:Destroy() end
             return Slider
         end
+        
         function Tab:AddTextBox(Configs)
             local TName = Configs[1] or Configs.Name or Configs.Title or "Text Box"
             local TDesc = Configs.Desc or Configs.Description or ""
@@ -2894,8 +3025,10 @@ function redzlib:MakeWindow(Configs)
         return Tab
     end
 
+    -- Conectar os botões existentes
     CloseButton.Activated:Connect(Window.CloseBtn)
     MinimizeButton.Activated:Connect(Window.MinimizeBtn)
+    
     return Window
 end
 
